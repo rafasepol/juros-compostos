@@ -26,12 +26,14 @@
           <div class="entrada"><b>R$</b><input id="aporte" type="number" inputmode="decimal" min="0" step="any" value="500"></div>
         </label>
 
-        <label class="campo">
-          <span>Aumentar o aporte todo ano</span>
-          <div class="entrada"><input id="reajuste" type="number" inputmode="decimal" min="0" max="100" step="any" value="0"><b>% ao ano</b></div>
-        </label>
+        <div class="campo largo">
+          <span>Mudar o aporte com o tempo</span>
+          <div id="degraus-cab" class="degrau cab" hidden><span>Depois de (anos)</span><span>Passa a ser (R$)</span><span></span></div>
+          <div id="degraus" class="degraus"></div>
+          <button type="button" id="add-degrau" class="adicionar">+ Adicionar mudança</button>
+        </div>
 
-        <div class="campo">
+        <div class="campo largo">
           <label for="taxa">Taxa de juros</label>
           <div class="duplo">
             <div class="entrada"><input id="taxa" type="number" inputmode="decimal" min="0" step="any" value="10"><b>%</b></div>
@@ -42,12 +44,12 @@
           </div>
         </div>
 
-        <label class="campo">
+        <label class="campo largo">
           <span>Período</span>
           <div class="entrada"><input id="anos" type="number" inputmode="numeric" min="1" max="60" step="1" value="10"><b>anos</b></div>
         </label>
 
-        <p class="nota">Os juros são calculados mês a mês e o aporte entra no fim de cada mês e sobe uma vez por ano, pelo percentual que você escolher. Taxa ao ano é convertida para a taxa mensal equivalente.</p>
+        <p class="nota">Os juros são calculados mês a mês e o aporte entra no fim de cada mês e muda quando você definir em "Mudar o aporte com o tempo". Taxa ao ano é convertida para a taxa mensal equivalente.</p>
       </form>
 
       <section class="resultado" aria-live="polite">
