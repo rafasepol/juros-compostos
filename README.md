@@ -9,12 +9,12 @@ HTML, CSS e JavaScript puro, sem dependências. Abra o `index.html` no navegador
 
 ## Como usar
 
-Preencha valor inicial, aporte mensal, quanto o aporte aumenta por ano (0% mantém fixo), taxa de juros (ao ano ou ao mês) e período em anos (1 a 60). Tudo atualiza enquanto você digita. A tabela ano a ano fica logo abaixo do gráfico.
+Preencha valor inicial, aporte mensal, mudanças no aporte ao longo do tempo (ex.: depois de 10 anos, passa a ser R$ 2.000), taxa de juros (ao ano ou ao mês) e período em anos (1 a 60). Tudo atualiza enquanto você digita. A tabela ano a ano fica logo abaixo do gráfico.
 
 ## Como o cálculo funciona
 
 - Taxa ao ano vira taxa mensal equivalente: `i = (1 + taxa)^(1/12) − 1`. Taxa ao mês é usada como está.
-- A cada mês: `saldo = saldo × (1 + i) + aporte`. O aporte entra no fim do mês. Com reajuste `r`, o aporte do ano `k` é `aporte × (1 + r)^(k − 1)`.
+- A cada mês: `saldo = saldo × (1 + i) + aporte`. O aporte entra no fim do mês. Cada mudança vale depois de N anos completos: com "depois de 10 anos, R$ 2.000", o aporte novo começa no ano 11.
 - O gráfico mostra o saldo no fim de cada ano.
 
 ## Publicar no GitHub Pages

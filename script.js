@@ -3,7 +3,7 @@
    - desenharGrafico(): gráfico SVG de duas linhas
    - o resto liga o formulário à tela */
 
-const LIMITES = { anos: [1, 60], taxa: [0, 1000], valor: [0, 1e12], reajuste: [0, 100] };
+const LIMITES = { anos: [1, 60], taxa: [0, 1000], valor: [0, 1e12] };
 
 function numero(v) {
   const n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.'));
@@ -15,13 +15,17 @@ function limitar(n, [min, max]) {
 }
 
 /**
- * @param {{inicial:number, aporte:number, reajuste?:number, taxa:number, tipoTaxa:'ano'|'mes', anos:number}} entrada
+ * @param {{inicial:number, aporte:number, degraus?:{ano:number, valor:number}[], taxa:number, tipoTaxa:'ano'|'mes', anos:number}} entrada
  * @returns {{ano:number, investido:number, total:number, juros:number}[]} do ano 0 ao ano N
  */
 function simular(entrada) {
   const inicial = limitar(numero(entrada.inicial), LIMITES.valor);
   const aporte = limitar(numero(entrada.aporte), LIMITES.valor);
-  const reajuste = limitar(numero(entrada.reajuste), LIMITES.reajuste) / 100;
+  // "Depois de N anos, o aporte passa a ser V". Vale a partir do ano N + 1.
+  const degraus = (entrada.degraus || [])
+    .map((d) => ({ ano: Math.floor(numero(d.ano)), valor: limitar(numero(d.valor), LIMITES.valor) }))
+    .filter((d) => d.ano >= 1)
+    .sort((a, b) => a.ano - b.ano);
   const taxa = limitar(numero(entrada.taxa), LIMITES.taxa) / 100;
   const anos = Math.round(limitar(numero(entrada.anos), LIMITES.anos));
 
@@ -32,8 +36,9 @@ function simular(entrada) {
   let saldo = inicial;
   let investido = inicial;
   for (let mes = 1; mes <= anos * 12; mes++) {
-    // O aporte sobe uma vez por ano: ano 1 = aporte, ano 2 = aporte × (1 + reajuste)...
-    const aporteDoMes = aporte * Math.pow(1 + reajuste, Math.floor((mes - 1) / 12));
+    const anosCompletos = Math.floor((mes - 1) / 12);
+    let aporteDoMes = aporte;
+    for (const d of degraus) if (d.ano <= anosCompletos) aporteDoMes = d.valor;
     saldo = saldo * (1 + i) + aporteDoMes; // aporte no fim do mês
     investido += aporteDoMes;
     if (mes % 12 === 0) {
@@ -55,7 +60,6 @@ if (typeof document !== 'undefined') {
   const campos = {
     inicial: $('inicial'),
     aporte: $('aporte'),
-    reajuste: $('reajuste'),
     taxa: $('taxa'),
     tipoTaxa: $('tipoTaxa'),
     anos: $('anos'),
@@ -63,9 +67,20 @@ if (typeof document !== 'undefined') {
 
   const grafico = $('grafico');
   const dica = $('dica');
-  const W = 720, H = 380;
+  // As medidas do gráfico seguem a largura da tela: no celular o desenho
+  // é menor, então textos e marcadores mantêm o tamanho real.
+  let W = 720, H = 380, PW = 0, PH = 0;
   const M = { t: 16, r: 20, b: 40, l: 82 };
-  const PW = W - M.l - M.r, PH = H - M.t - M.b;
+  function medir() {
+    W = Math.round(grafico.parentElement.clientWidth) || 720;
+    const estreito = W < 520;
+    H = estreito ? Math.max(240, Math.round(W * 0.8)) : Math.min(380, Math.round(W * 0.53));
+    M.l = estreito ? 66 : 82;
+    M.r = estreito ? 14 : 20;
+    PW = W - M.l - M.r;
+    PH = H - M.t - M.b;
+    grafico.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  }
 
   let pontos = [];
   let escala = null;
@@ -90,6 +105,7 @@ if (typeof document !== 'undefined') {
   }
 
   function desenharGrafico() {
+    medir();
     const anos = pontos.length - 1;
     const maximo = pontos[anos].total;
     const passo = passoY(maximo);
@@ -184,8 +200,12 @@ if (typeof document !== 'undefined') {
   }
 
   grafico.addEventListener('pointermove', (e) => mostrar(indiceDoPonteiro(e)));
-  grafico.addEventListener('pointerleave', () => {
-    if (document.activeElement !== grafico) esconder();
+  grafico.addEventListener('pointerleave', (e) => {
+    // No toque, o dedo sai do gráfico ao levantar: mantém a dica até tocar fora.
+    if (e.pointerType !== 'touch' && document.activeElement !== grafico) esconder();
+  });
+  document.addEventListener('pointerdown', (e) => {
+    if (!grafico.parentElement.contains(e.target)) esconder();
   });
   grafico.addEventListener('focus', () => mostrar(ativo ?? escala.anos));
   grafico.addEventListener('blur', esconder);
@@ -198,11 +218,48 @@ if (typeof document !== 'undefined') {
     e.preventDefault();
   });
 
+  const listaDegraus = $('degraus');
+
+  function lerDegraus() {
+    return [...listaDegraus.querySelectorAll('.degrau')].map((linha) => ({
+      ano: linha.querySelector('.d-ano').value,
+      valor: linha.querySelector('.d-valor').value,
+    }));
+  }
+
+  function adicionarDegrau() {
+    const atuais = lerDegraus();
+    const ultimo = atuais[atuais.length - 1];
+    const ano = ultimo ? Math.min(59, Math.floor(numero(ultimo.ano)) + 5) : 5;
+    const valor = ultimo ? ultimo.valor : campos.aporte.value;
+    const linha = document.createElement('div');
+    linha.className = 'degrau';
+    linha.innerHTML = `
+      <div class="entrada"><input class="d-ano" type="number" inputmode="numeric" min="1" max="59" step="1" value="${ano}" aria-label="Depois de quantos anos o aporte muda"></div>
+      <div class="entrada"><b>R$</b><input class="d-valor" type="number" inputmode="decimal" min="0" step="any" value="${valor}" aria-label="Novo aporte mensal"></div>
+      <button type="button" class="remover" aria-label="Remover esta mudança">&times;</button>`;
+    listaDegraus.appendChild(linha);
+  }
+
+  $('add-degrau').addEventListener('click', () => {
+    adicionarDegrau();
+    atualizar();
+    listaDegraus.lastElementChild.querySelector('.d-ano').focus();
+  });
+  listaDegraus.addEventListener('input', atualizar);
+  listaDegraus.addEventListener('click', (e) => {
+    const botao = e.target.closest('.remover');
+    if (!botao) return;
+    botao.closest('.degrau').remove();
+    atualizar();
+  });
+
   function atualizar() {
+    $('degraus-cab').hidden = !listaDegraus.children.length;
     const entrada = {
       inicial: campos.inicial.value,
       aporte: campos.aporte.value,
-      reajuste: campos.reajuste.value,
+      degraus: lerDegraus(),
       taxa: campos.taxa.value,
       tipoTaxa: campos.tipoTaxa.value,
       anos: campos.anos.value,
@@ -225,6 +282,15 @@ if (typeof document !== 'undefined') {
 
     desenharGrafico();
   }
+
+  let larguraAnterior = grafico.parentElement.clientWidth;
+  new ResizeObserver(() => {
+    const largura = grafico.parentElement.clientWidth;
+    if (largura !== larguraAnterior) {
+      larguraAnterior = largura;
+      desenharGrafico();
+    }
+  }).observe(grafico.parentElement);
 
   for (const c of Object.values(campos)) c.addEventListener('input', atualizar);
   atualizar();
