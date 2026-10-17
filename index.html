@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculadora de juros compostos</title>
+  <meta name="description" content="Simule quanto seu dinheiro rende com juros compostos e veja, ano a ano, a diferença entre o que você investiu e o que acumulou.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="pagina">
+    <header class="topo">
+      <h1>Juros compostos</h1>
+      <p>Veja quanto o seu dinheiro cresce ano a ano quando os juros rendem juros.</p>
+    </header>
+
+    <div class="layout">
+      <form class="painel formulario" onsubmit="return false" aria-label="Dados da simulação">
+        <label class="campo">
+          <span>Valor inicial</span>
+          <div class="entrada"><b>R$</b><input id="inicial" type="number" inputmode="decimal" min="0" step="any" value="1000"></div>
+        </label>
+
+        <label class="campo">
+          <span>Aporte mensal</span>
+          <div class="entrada"><b>R$</b><input id="aporte" type="number" inputmode="decimal" min="0" step="any" value="500"></div>
+        </label>
+
+        <label class="campo">
+          <span>Aumentar o aporte todo ano</span>
+          <div class="entrada"><input id="reajuste" type="number" inputmode="decimal" min="0" max="100" step="any" value="0"><b>% ao ano</b></div>
+        </label>
+
+        <div class="campo">
+          <label for="taxa">Taxa de juros</label>
+          <div class="duplo">
+            <div class="entrada"><input id="taxa" type="number" inputmode="decimal" min="0" step="any" value="10"><b>%</b></div>
+            <select id="tipoTaxa" aria-label="Período da taxa">
+              <option value="ano" selected>ao ano</option>
+              <option value="mes">ao mês</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="campo">
+          <span>Período</span>
+          <div class="entrada"><input id="anos" type="number" inputmode="numeric" min="1" max="60" step="1" value="10"><b>anos</b></div>
+        </label>
+
+        <p class="nota">Os juros são calculados mês a mês e o aporte entra no fim de cada mês e sobe uma vez por ano, pelo percentual que você escolher. Taxa ao ano é convertida para a taxa mensal equivalente.</p>
+      </form>
+
+      <section class="resultado" aria-live="polite">
+        <div class="cartoes">
+          <div class="cartao">
+            <span>Total investido</span>
+            <strong id="r-investido">—</strong>
+          </div>
+          <div class="cartao">
+            <span>Juros ganhos</span>
+            <strong id="r-juros">—</strong>
+          </div>
+          <div class="cartao destaque">
+            <span>Valor final</span>
+            <strong id="r-total">—</strong>
+          </div>
+        </div>
+        <p class="detalhe" id="r-detalhe"></p>
+
+        <figure class="painel grafico-caixa">
+          <figcaption>
+            <span class="titulo">Evolução ano a ano</span>
+            <span class="legenda">
+              <span><i class="chave investido"></i>Total investido</span>
+              <span><i class="chave total"></i>Total acumulado</span>
+            </span>
+          </figcaption>
+          <div class="grafico-area">
+            <svg id="grafico" viewBox="0 0 720 380" role="img" tabindex="0" aria-label="Gráfico da simulação"></svg>
+            <div id="dica" class="dica" hidden></div>
+          </div>
+          <p class="ajuda">Passe o mouse sobre o gráfico, ou use as setas do teclado, para ver cada ano.</p>
+        </figure>
+
+        <details class="painel tabela">
+          <summary>Ver tabela ano a ano</summary>
+          <div class="tabela-rolagem">
+            <table>
+              <thead>
+                <tr><th scope="col">Ano</th><th scope="col">Investido</th><th scope="col">Juros</th><th scope="col">Acumulado</th></tr>
+              </thead>
+              <tbody id="tabela-corpo"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
